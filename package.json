@@ -37,6 +37,7 @@
   "scripts": {
     "dev": "tsc --watch",
     "start": "nodemon App.ts",
+    "devStart": "nodemon DevApp.ts",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
