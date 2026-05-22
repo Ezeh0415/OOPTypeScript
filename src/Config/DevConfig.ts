@@ -3,7 +3,8 @@ export class Config {
     private _port: number;
 
     private constructor() {
-        this._port = 3000;
+        const port = process.env.PORT ? Number(process.env.PORT) : 3000;
+        this._port = Number.isNaN(port) ? 3000 : port;
     }
 
     public static getInstance(): Config {

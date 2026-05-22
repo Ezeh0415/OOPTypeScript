@@ -1,5 +1,8 @@
+import dotenv from "dotenv"
 import {DevServer} from './src/server/DevServer';
 
+// Load environment variables FIRST
+dotenv.config();
 class DevApplication {
     private server: DevServer;
 

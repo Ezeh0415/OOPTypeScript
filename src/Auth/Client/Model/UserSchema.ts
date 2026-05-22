@@ -1,7 +1,7 @@
 import { Schema, Document, model } from 'mongoose';
 
 
-interface IUser extends Document {
+export interface IUser extends Document {
     firstName: string;
     lastName: string;
     email: string;
@@ -14,6 +14,8 @@ interface IUser extends Document {
     lockedUntil: Date | null;
     refreshToken: string;
 }
+
+
 
 const UserSchema = new Schema(
     {

@@ -19,7 +19,12 @@ export class DevDatabase {
     }
 
     private getConnectionString(): string {
-        return process.env.DB_URL || 'mongodb://localhost:27017/myapp';
+        const url = process.env.DB_URL;
+        if (!url) {
+            throw new Error('Environment variable DB_URL is not defined');
+        }
+
+        return url;
     }
 
     private getConnectionOptions(): mongoose.ConnectOptions {

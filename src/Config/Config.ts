@@ -3,7 +3,7 @@ export class AppConfig {
     private _port: number;
 
     private constructor() {
-        this._port = 3000;
+        this._port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
     }
 
     public static getInstance(): AppConfig {
