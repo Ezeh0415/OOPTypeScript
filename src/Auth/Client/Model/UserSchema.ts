@@ -36,4 +36,4 @@ const UserSchema = new Schema(
     }
 )
 
-export const UserModel = model<IUser>('User', UserSchema);
+export const UserModel = model<IUser>('Users', UserSchema);

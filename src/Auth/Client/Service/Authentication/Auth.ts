@@ -30,7 +30,9 @@ export class AuthService {
 
     async register(userData: Partial<IUser>): Promise<IUser> {
         const email = userData?.email;
+
         const existingUser = await this.isUserExists(email as string);
+
         if (existingUser) {
             throw new Error("user already exists");
         }
@@ -43,6 +45,7 @@ export class AuthService {
             lastName: userData.lastName,
             email: userData.email,
             password: hashedPassword,
+            refreshToken: userData.refreshToken,
         }
 
         const user = new this.user(newUser);

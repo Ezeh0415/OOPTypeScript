@@ -25,9 +25,6 @@ export class DevServer {
             // configure middleware
             this.middlewareConfig.initialize();
 
-            // Configure routes
-            // this.configureRoutes();
-
             // configure error handler 
             // this.configureErrorHandlers();
 
