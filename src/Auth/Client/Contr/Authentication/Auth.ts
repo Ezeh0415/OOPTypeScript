@@ -5,6 +5,8 @@ import { Register } from "../../ZodValidation/Registration";
 import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
 import { Login } from "../../ZodValidation/Login";
 import { OtpValidation } from "../../ZodValidation/Otp";
+import { ResendOtp } from "../../ZodValidation/ResendOtp"
+import { success } from "zod";
 
 export class AuthContr {
     private static instance: AuthContr;
@@ -124,6 +126,62 @@ export class AuthContr {
             })
 
             return;
+        }
+    }
+
+    public async resendOtp(req: Request, res: Response): Promise<void> {
+        try {
+
+            const validateData = await ResendOtp.parse(req.body)
+
+            const user = await this.authService.resendOtp(validateData.email as string)
+
+            res.status(200).json({
+                success: user,
+                message: "otp resent successfully",
+            })
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
+    public async forgotPassword(req: Request, res: Response): Promise<void> {
+        try {
+
+            const validateData = await ResendOtp.parse(req.body);
+
+            const user = await this.authService.ForgotPassword(validateData.email as string);
+
+            res.status(200).json({
+                success: user,
+                message: "order initiated"
+            })
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
         }
     }
 }

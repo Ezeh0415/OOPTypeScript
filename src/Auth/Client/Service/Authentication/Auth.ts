@@ -148,4 +148,41 @@ export class AuthService {
         return true;
 
     }
+
+    async resendOtp(email: string): Promise<boolean> {
+
+        const isExist = await this.isUserExists(email as string);
+
+        if (!isExist) {
+            throw new Error("user not found ");
+        }
+
+        const newOtp = await this.otpService.NewOtp(6);
+
+        if (!newOtp) {
+            throw new Error("otp error");
+        }
+
+        await this.user.updateOne(
+            { _id: isExist._id },
+            { $set: { otp: newOtp, otpExpiry: new Date(Date.now() + 10 * 60 * 1000), otpAdded: false } }
+        )
+
+        return true;
+    }
+
+    async ForgotPassword(email: string): Promise<boolean> {
+        const isExist = await this.isUserExists(email as string);
+
+        if (!isExist) {
+            throw new Error("check your email nd try again");
+        }
+
+        await this.user.updateOne(
+            { _id: isExist._id },
+            { $set: { password: "", refreshToken: "" } }
+        )
+
+        return true;
+    }
 }
