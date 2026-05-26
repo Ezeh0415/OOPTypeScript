@@ -6,6 +6,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.5.2",
     "@types/nodemailer": "^8.0.0",
+    "@types/otp-generator": "^4.0.2",
     "@types/passport": "^1.0.17",
     "@types/passport-google-oauth20": "^2.0.17",
     "@types/passport-google-oidc": "^0.1.0",

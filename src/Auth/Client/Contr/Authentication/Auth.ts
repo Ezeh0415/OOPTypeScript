@@ -4,6 +4,7 @@ import { ErrorHandler } from "../../../../Utils/ZodError/ZodError";
 import { Register } from "../../ZodValidation/Registration";
 import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
 import { Login } from "../../ZodValidation/Login";
+import { OtpValidation } from "../../ZodValidation/Otp";
 
 export class AuthContr {
     private static instance: AuthContr;
@@ -80,6 +81,34 @@ export class AuthContr {
             })
 
             return;
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
+    public async otpValidate(req: Request, res: Response): Promise<void> {
+        try {
+
+            const validate = await OtpValidation.parse(req.body)
+
+            const verify = await this.authService.otpValidate(validate);
+
+
+
+            res.status(200).json({ status: verify, message: "otp successfully verified" })
 
         } catch (error) {
             if (ErrorHandler.handleZodError(res, error)) {

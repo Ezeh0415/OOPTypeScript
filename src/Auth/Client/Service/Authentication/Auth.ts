@@ -1,4 +1,5 @@
 import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
+import { OtpService } from "../../../../Utils/GenerateOtp/OtpGenerate";
 import { UserModel } from "../../Model/UserSchema";
 import { IUser } from "../../Model/UserSchema"
 import bcrypt from 'bcryptJs';
@@ -9,6 +10,7 @@ export class AuthService {
     private user = UserModel;
     private readonly SALT_ROUNDS = 10;
     private tokenService = TokenService.getInstance();
+    private otpService = OtpService.getInstance();
 
 
 
@@ -41,6 +43,10 @@ export class AuthService {
             throw new Error("user already exists");
         }
 
+        // otp 
+        const number = 6
+        const otp = await this.otpService.NewOtp(number as number);
+
         // Hash password
         const hashedPassword = await bcrypt.hash(userData.password as string, this.SALT_ROUNDS);
 
@@ -49,6 +55,8 @@ export class AuthService {
             lastName: userData.lastName,
             email: userData.email,
             password: hashedPassword,
+            otp: otp,
+            otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
         }
 
         const user = new this.user(newUser);
@@ -56,8 +64,6 @@ export class AuthService {
         user.refreshToken = token;
         await user.save();
         return user;
-
-        //  Generate token AFTER user has _id
 
 
     }
@@ -101,6 +107,45 @@ export class AuthService {
         isExist.save();
 
         return isExist;
+
+    }
+
+    async otpValidate(userData: Partial<IUser>): Promise<boolean> {
+        const email = userData.email;
+        const otp = userData.otp;
+
+        const isExist = await this.isUserExists(email as string);
+
+        if (!isExist) {
+            throw new Error('error user not found');
+        }
+
+
+        const otpExpiry = isExist.otpExpiry ? new Date(isExist.otpExpiry) : null;
+        const currentTime = new Date();
+
+        if (!otpExpiry || otpExpiry < currentTime) {
+            await this.user.updateOne(
+                { _id: isExist._id },
+                { $set: { otp: "", otpExpiry: "", otpAdded: false } }
+            );
+            throw new Error('OTP has expired');
+        }
+
+        if (!otp || isExist.otp !== otp) {
+            await this.user.updateOne(
+                { _id: isExist._id },
+                { $set: { otp: "", otpExpiry: "", otpAdded: false } }
+            );
+            throw new Error('invalid otp');
+        }
+
+        await this.user.updateOne(
+            { _id: isExist._id },
+            { $set: { otp: "", otpExpiry: "", otpAdded: true } }
+        );
+
+        return true;
 
     }
 }

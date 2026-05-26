@@ -7,5 +7,6 @@ const authContr = AuthContr.getInstance();
 // ✅ Routes as functions
 router.post("/register", (req, res) => authContr.register(req, res));
 router.post("/login", (req, res) => authContr.login(req, res));
+router.post("/otpVerify", (req, res) => authContr.otpValidate(req, res));
 
 export default router;

@@ -10,6 +10,7 @@ export interface IUser extends Document {
     status: string;
     otp: string;
     otpExpiry: Date;
+    otpAdded: boolean;
     loginFailedCount: number;
     lockedUntil: Date | null;
     refreshToken: string;
@@ -27,6 +28,7 @@ const UserSchema = new Schema(
         status: { type: String, required: true, default: 'active' },
         otp: { type: String, required: false },
         otpExpiry: { type: Date, required: false },
+        otpAdded: { type: Boolean, required: false, default: false },
         loginFailedCount: { type: Number, required: false, default: 0 },
         lockedUntil: { type: Date, required: false },
         refreshToken: { type: String, required: false },
