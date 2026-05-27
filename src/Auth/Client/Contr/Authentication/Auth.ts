@@ -7,6 +7,7 @@ import { Login } from "../../ZodValidation/Login";
 import { OtpValidation } from "../../ZodValidation/Otp";
 import { ResendOtp } from "../../ZodValidation/ResendOtp"
 import { success } from "zod";
+import { ResetPassword } from "../../ZodValidation/ResetPassword";
 
 export class AuthContr {
     private static instance: AuthContr;
@@ -181,6 +182,32 @@ export class AuthContr {
                 success: false,
                 message: 'internal server error',
                 error: errorMessage,
+            })
+        }
+    }
+
+    public async resetPassword(req: Request, res: Response): Promise<void> {
+        try {
+            const validateData = ResetPassword.parse(req.body);
+
+            const user = await this.authService.resetPassword(validateData);
+
+            res.status(200).json({
+                success: user,
+                message: "password reset successfully"
+            })
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                status: false,
+                message: "sever error",
+                error: errorMessage
             })
         }
     }

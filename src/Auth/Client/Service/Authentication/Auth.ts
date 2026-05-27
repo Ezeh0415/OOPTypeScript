@@ -178,11 +178,50 @@ export class AuthService {
             throw new Error("check your email nd try again");
         }
 
+        const newOtp = await this.otpService.NewOtp(6);
+
         await this.user.updateOne(
             { _id: isExist._id },
-            { $set: { password: "", refreshToken: "" } }
+            { $set: { otp: newOtp, otpAdded: false, otpExpiry: new Date(Date.now() + 10 * 60 * 1000) } }
         )
+
+        // setup email and send token 
 
         return true;
     }
+
+    async resetPassword(userData: Partial<IUser>): Promise<boolean> {
+        const { email, password, otp } = userData;
+
+        const user = await this.isUserExists(email as string);
+
+        if (!user) {
+            throw new Error("user not found");
+        }
+
+        // 1. Verify OTP first (usually cheaper than bcrypt)
+        if (user.otp !== otp) {
+            throw new Error("invalid otp");
+        }
+
+        // 2. Check if new password is same as old password
+        const isSameAsOld = await bcrypt.compare(password as string, user.password);
+
+        if (isSameAsOld) {
+            throw new Error("new password cannot be the same as old password");
+        }
+
+        // 3. Hash the new password
+        const hashPassword = await bcrypt.hash(password as string, this.SALT_ROUNDS);
+
+        // 4. Update user
+        await this.user.updateOne(
+            { _id: user._id },
+            { $set: { password: hashPassword, otp: "", otpAdded: true, otpExpiry: "" } }
+        );
+
+        return true;
+    }
+
+    // async googleRegister(userData:)
 }
