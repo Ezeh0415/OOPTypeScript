@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../../Service/Authentication/Auth";
 import { ErrorHandler } from "../../../../Utils/ZodError/ZodError";
 import { Register } from "../../ZodValidation/Registration";
@@ -8,6 +8,7 @@ import { OtpValidation } from "../../ZodValidation/Otp";
 import { ResendOtp } from "../../ZodValidation/ResendOtp"
 import { success } from "zod";
 import { ResetPassword } from "../../ZodValidation/ResetPassword";
+import { GUser } from "../../../../Middleware/Passport.ts/Passport";
 
 export class AuthContr {
     private static instance: AuthContr;
@@ -209,6 +210,29 @@ export class AuthContr {
                 message: "sever error",
                 error: errorMessage
             })
+        }
+    }
+
+    public async googleRegister(req: Request, res: Response, next: NextFunction): Promise<void> {
+        try {
+            const result = req.user as GUser;
+
+            if (!result) {
+                res.status(401).json({ message: "authentication failed" });
+                return;
+            }
+
+            const user = await this.authService.googleRegister(result);
+
+            const token = await this.tokenService.getJwtToken(user._id, user.email);
+
+            const userObject = user.toObject();
+            const { password, otp, otpExpire, otpAdded, loginFailedCount, lockedUntil, ...safeUser } = userObject;
+
+            res.status(200).json({ message: "login successful", user: safeUser, token });
+            return;
+        } catch (error) {
+            next(error)
         }
     }
 }

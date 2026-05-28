@@ -1,4 +1,5 @@
 import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
+import { GUser } from "../../../../Middleware/Passport.ts/Passport";
 import { OtpService } from "../../../../Utils/GenerateOtp/OtpGenerate";
 import { UserModel } from "../../Model/UserSchema";
 import { IUser } from "../../Model/UserSchema"
@@ -223,5 +224,21 @@ export class AuthService {
         return true;
     }
 
-    // async googleRegister(userData:)
+    async googleRegister(userData: GUser): Promise<IUser> {
+        const isExist = await this.isUserExists(userData.email as string);
+
+        if (!isExist) {
+            throw new Error("user not found ");
+        }
+
+        const id = isExist?._id as  object
+        const email = isExist?.email as string
+
+        const refreshToken = await this.tokenService.getJwtToken(id, email);
+
+        isExist.refreshToken = refreshToken;
+        isExist.save();
+
+        return isExist;
+    }
 }
