@@ -1,15 +1,17 @@
 import { Router } from "express";
 import { AuthContr } from "../Auth/Client/Contr/Authentication/Auth";
 import passport, { passportConfigure } from "../Middleware/Passport.ts/Passport";
+import { TokenAuth } from "../Config/JWTAUth";
 
 const router = Router();
 const authContr = AuthContr.getInstance();
+const Authentication = TokenAuth.getInstance();
 // Initialize passport strategy first
 passportConfigure["passport.use"]();
 
 //  Routes as functions
 // register route
-router.post("/register", (req, res) => authContr.register(req, res));
+router.post("/register",(req, res) => authContr.register(req, res));
 router.post("/login", (req, res) => authContr.login(req, res));
 router.post("/otpVerify", (req, res) => authContr.otpValidate(req, res));
 router.post("/resendOtp", (req, res) => authContr.resendOtp(req, res));

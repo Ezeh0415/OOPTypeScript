@@ -6,7 +6,8 @@ import { UserModel } from "../../Auth/Client/Model/UserSchema";
 
 export interface GUser {
     googleId: string;
-    name: string;
+    firstName: string;
+    lastName: string;
     email: string;
     password: string;
     otpAdded: boolean;
@@ -49,7 +50,8 @@ export class PassportConfigure implements PassportUseMethod {
 
                 const user: GUser = {
                     googleId: profile.id,
-                    name: profile.displayName,
+                    firstName: profile.displayName?.givenName || profile.displayName.split(' ')[0],
+                    lastName: profile.displayName?.familyName || profile.displayName.split(' ').slice(1).join(' '),
                     email: profile.emails?.[0]?.value,
                     password: randomPassword,
                     otpAdded: true
