@@ -1,14 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../../Service/Authentication/Auth";
-import { ErrorHandler } from "../../../../Utils/ZodError/ZodError";
+import { ErrorHandler } from "../../../../../Utils/ZodError/ZodError";
 import { Register } from "../../ZodValidation/Registration";
-import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
+import { TokenService } from "../../../../../Middleware/JwtConfig/GetJwtToken";
 import { Login } from "../../ZodValidation/Login";
 import { OtpValidation } from "../../ZodValidation/Otp";
-import { ResendOtp } from "../../ZodValidation/ResendOtp"
-import { success } from "zod";
+import { ResendOtp } from "../../ZodValidation/ResendOtp";
 import { ResetPassword } from "../../ZodValidation/ResetPassword";
-import { GUser } from "../../../../Middleware/Passport.ts/Passport";
+import { GUser } from "../../../../../Middleware/Passport.ts/Passport";
 
 export class AuthContr {
     private static instance: AuthContr;

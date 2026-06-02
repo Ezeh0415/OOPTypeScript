@@ -1,7 +1,7 @@
 import { email } from "zod";
 import { IUser, UserModel } from "../../Auth/Client/Model/UserSchema";
-import { Config } from "../../Config/DevConfig";
-import { PaymentModel, PaymentProvider, PaymentType } from "../Model/PaymentSchema";
+import { Config } from "../../../Config/DevConfig";
+import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType } from "../Model/PaymentSchema";
 import axios from "axios";
 
 
@@ -63,7 +63,7 @@ export class PaymentService {
         const paymentData = {
             userId: isExist._id,
             amount: amount,
-            status: response.data.data?.status,
+            status: PaymentStatus.PENDING,
             paymentType: PaymentType.DEPOSIT,
             provider: PaymentProvider.PAYSTACK,
             reference: response.data.data?.reference,
@@ -73,8 +73,15 @@ export class PaymentService {
                 accessCode: response.data.data?.access_code,
                 amountInKobo: amount * 100,
             },
-            createdAt:new Date(),
-            pay
+            createdAt: new Date(),
+            paystack: {
+                reference: response.data.data?.reference,
+                accessCode: response.data.data?.access_code,
+                authorizationCode: response.data.data?.authorization_url,
+                paidAt: new Date(),
+            }
         }
+
+        console.log(paymentData)
     }
 }

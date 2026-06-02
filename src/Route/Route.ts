@@ -1,17 +1,19 @@
 import { Router } from "express";
-import { AuthContr } from "../Auth/Client/Contr/Authentication/Auth";
 import passport, { passportConfigure } from "../Middleware/Passport.ts/Passport";
 import { TokenAuth } from "../Config/JWTAUth";
+import { AuthContr } from "../Module/Auth/Client/Contr/Authentication/Auth";
+import { PaymentContr } from "../Module/Payment/Contr/PaymentContr";
 
 const router = Router();
 const authContr = AuthContr.getInstance();
+const paymentContr = PaymentContr.getInstance();
 const Authentication = TokenAuth.getInstance();
 // Initialize passport strategy first
 passportConfigure["passport.use"]();
 
 //  Routes as functions
 // register route
-router.post("/register",(req, res) => authContr.register(req, res));
+router.post("/register", (req, res) => authContr.register(req, res));
 router.post("/login", (req, res) => authContr.login(req, res));
 router.post("/otpVerify", (req, res) => authContr.otpValidate(req, res));
 router.post("/resendOtp", (req, res) => authContr.resendOtp(req, res));
@@ -32,6 +34,13 @@ router.get("/google/callback",
         session: false
     }),
     (req, res, next) => authContr.googleRegister(req, res, next)
+)
+
+// payment section 
+
+router.post('/paystack/deposit', 
+    Authentication.authenticate.bind(Authentication),
+    (req, res) => paymentContr.CreatePayment(req, res)
 )
 
 

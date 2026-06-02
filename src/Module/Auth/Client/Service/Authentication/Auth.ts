@@ -1,6 +1,6 @@
-import { TokenService } from "../../../../Middleware/JwtConfig/GetJwtToken";
-import { GUser } from "../../../../Middleware/Passport.ts/Passport";
-import { OtpService } from "../../../../Utils/GenerateOtp/OtpGenerate";
+import { TokenService } from "../../../../../Middleware/JwtConfig/GetJwtToken";
+import { GUser } from "../../../../../Middleware/Passport.ts/Passport";
+import { OtpService } from "../../../../../Utils/GenerateOtp/OtpGenerate";
 import { UserModel } from "../../Model/UserSchema";
 import { IUser } from "../../Model/UserSchema"
 import bcrypt from 'bcryptJs';

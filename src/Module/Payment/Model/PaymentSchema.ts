@@ -173,7 +173,6 @@ const PaymentSchema = new Schema<IPayment>(
         paystack: {
             reference: { type: String },
             accessCode: { type: String },
-            paymentRef: { type: String },
             authorizationCode: { type: String },
             transactionId: { type: String },
             paymentMethod: { type: String },

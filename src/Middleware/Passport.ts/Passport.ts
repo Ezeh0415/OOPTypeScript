@@ -1,7 +1,7 @@
 import { Config } from "../../Config/DevConfig";
 import passport from 'passport';
 import { Strategy as GoogleStrategy } from 'passport-google-oauth20';
-import { UserModel } from "../../Auth/Client/Model/UserSchema";
+import { UserModel } from "../../Module/Auth/Client/Model/UserSchema";
 
 
 export interface GUser {
