@@ -1,4 +1,5 @@
 import { Router } from "express";
+import express from 'express';
 import passport, { passportConfigure } from "../Middleware/Passport.ts/Passport";
 import { TokenAuth } from "../Config/JWTAUth";
 import { AuthContr } from "../Module/Auth/Client/Contr/Authentication/Auth";
@@ -38,9 +39,14 @@ router.get("/google/callback",
 
 // payment section 
 
-router.post('/paystack/deposit', 
+router.post('/paystack/deposit',
     Authentication.authenticate.bind(Authentication),
     (req, res) => paymentContr.CreatePayment(req, res)
+)
+
+router.post('paystack/deposit/webhook',
+    express.json(),
+    (req, res) => paymentContr.PaystackWebhhok(req, res)
 )
 
 

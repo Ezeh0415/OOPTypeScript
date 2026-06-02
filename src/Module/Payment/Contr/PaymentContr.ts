@@ -1,4 +1,4 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { AuthRequest } from "../../../Config/JWTAUth";
 import { ErrorHandler } from "../../../Utils/ZodError/ZodError";
 import { createPayment } from "../ZodValidtion/paystack/CreatePayment";
@@ -33,14 +33,45 @@ export class PaymentContr {
             res.status(200).json({
                 success: true,
                 message: "deposit creation success",
-                result: result
+                result: {
+                    amount: result.amount,
+                    info: result.paystack,
+                },
             })
-            
+
         } catch (error) {
 
             if (ErrorHandler.handleZodError(res, error)) {
                 return;
             }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
+    async PaystackWebhhok(req: Request, res: Response): Promise<void> {
+        try {
+
+            const resultData = {
+                signature: req.headers['x-paystack-signature'] as string,
+                body: req.body
+            }
+
+            console.log(resultData);
+
+            await this.paymentService.PaystackWebhook(resultData);
+
+
+            res.status(200).send('payment successful');
+
+        } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             res.status(500).json({

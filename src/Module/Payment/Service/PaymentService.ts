@@ -1,8 +1,8 @@
-import { email } from "zod";
 import { IUser, UserModel } from "../../Auth/Client/Model/UserSchema";
 import { Config } from "../../../Config/DevConfig";
 import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType } from "../Model/PaymentSchema";
 import axios from "axios";
+const crypto = require('crypto');
 
 
 export class PaymentService {
@@ -82,6 +82,75 @@ export class PaymentService {
             }
         }
 
-        console.log(paymentData)
+        const result = await this.paymentModel.create(paymentData);
+
+        return result;
+    }
+
+    async PaystackWebhook(returnData: any) {
+        const { signature, body } = returnData;
+
+        if (!signature) {
+            throw new Error("No signature found in headers");
+        }
+
+        const hash = crypto.createHmac('sha512', this.config.PAYSTACK_SECRET_KEY)
+            .update(JSON.stringify(body))
+            .digest('hex');
+
+        if (hash !== signature) {
+            throw new Error("unauthorized");
+        }
+
+        const event = body;
+
+        console.log(event)
+        switch (event.event) {
+            case "charge success":
+                const success = await this.paymentModel.findOneAndUpdate(
+                    { reference: event.data.reference },
+                    {
+                        status: event.data.status,
+                        amount: event.data.amount,
+                        paystack: {
+                            paidAt: new Date(),
+                            authorizationCode: ""
+                        }
+                    },
+                    {
+                        new: true,  // Return the updated document (not the old one)
+                        upsert: false  // Don't create if not found (optional)
+                    }
+                )
+                break;
+
+            case "charge failed":
+                const failed = await this.paymentModel.findOneAndUpdate(
+                    { reference: event.data.reference },
+                    {
+                        status: event.data.status,
+                        amount: event.data.amount,
+                        paystack: {
+                            paidAt: new Date(),
+                            authorizationCode: ""
+                        }
+                    },
+                    {
+                        new: true,  // Return the updated document (not the old one)
+                        upsert: false  // Don't create if not found (optional)
+                    }
+                );
+
+                if (!failed) {
+                    throw new Error("Payment not found");
+                }
+
+
+                break;
+        };
+
+        return;
+
+
     }
 }
