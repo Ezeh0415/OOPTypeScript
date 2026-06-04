@@ -1,5 +1,5 @@
 // app.ts
-import { AppServer } from './src/server/Server';
+import { AppServer } from './server/Server';
 
 class Application {
     private server: AppServer;

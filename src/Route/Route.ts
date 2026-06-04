@@ -44,7 +44,7 @@ router.post('/paystack/deposit',
     (req, res) => paymentContr.CreatePayment(req, res)
 )
 
-router.post('paystack/deposit/webhook',
+router.post('/deposit/webhook',
     express.json(),
     (req, res) => paymentContr.PaystackWebhhok(req, res)
 )

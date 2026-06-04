@@ -2,7 +2,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-import {DevServer} from './src/server/DevServer';
+import {DevServer} from './server/DevServer';
 
 class DevApplication {
     private server: DevServer;

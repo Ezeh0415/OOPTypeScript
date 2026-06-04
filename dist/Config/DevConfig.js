@@ -1,22 +1,8 @@
-export class Config {
-    private static instance: Config;
-    private _port: number;
-    private _JWT_TOKEN_KEY: string;
-    private _JWT_REFRESH_TOKEN_KEY: string;
-    private _JWT_TOKEN_EXPIRE: string;
-    private _JWT_REFRESH_TOKEN_EXPIRE: string;
-    private _SESSION_SECRET: string;
-    private _GOOGLE_CLIENT_ID: string;
-    private _GOOGLE_CLIENT_SECRET: string;
-    private _PAYSTACK_SECRET_KEY: string;
-    private _PAYSTACK_PUBLIC_KEY: string;
-    private _PAYSTACK_BASE_URL: string;
-    private _FLUTTER_SECRET_KEY: string;
-    private _FLUTTER_PUBLIC_KEY: string;
-    private _FLUTTER_ENCRYPTION_KEY: string;
-    private _FLUTTER_SECRET_HASH: string;
-
-    private constructor() {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.Config = void 0;
+class Config {
+    constructor() {
         const port = Number.parseInt(process.env.PORT ?? '3000', 10);
         this._port = Number.isNaN(port) ? 3000 : port;
         this._SESSION_SECRET = process.env.SESSION_SECRET ?? '';
@@ -34,74 +20,57 @@ export class Config {
         this._FLUTTER_ENCRYPTION_KEY = process.env.FLUTTER_ENCRYPTION_KEY ?? '';
         this._FLUTTER_SECRET_HASH = process.env.FLUTTER_SECRET_HASH ?? '';
     }
-
-    public static getInstance(): Config {
+    static getInstance() {
         if (!Config.instance) {
             Config.instance = new Config();
         }
         return Config.instance;
     }
-
-
-    public get port(): number {
+    get port() {
         return this._port;
     }
-
-    public get JWT_TOKEN_KEY(): string {
+    get JWT_TOKEN_KEY() {
         return this._JWT_TOKEN_KEY;
     }
-
-    public get JWT_REFRESH_TOKEN_KEY(): string {
+    get JWT_REFRESH_TOKEN_KEY() {
         return this._JWT_REFRESH_TOKEN_KEY;
     }
-
-    public get JWT_TOKEN_EXPIRE(): string {
+    get JWT_TOKEN_EXPIRE() {
         return this._JWT_TOKEN_EXPIRE;
     }
-
-    public get JWT_REFRESH_TOKEN_EXPIRE(): string {
+    get JWT_REFRESH_TOKEN_EXPIRE() {
         return this._JWT_REFRESH_TOKEN_EXPIRE;
     }
-
-    public get SESSION_SECRET(): string {
-        return this._SESSION_SECRET
+    get SESSION_SECRET() {
+        return this._SESSION_SECRET;
     }
-
-    public get GOOGLE_CLIENT_ID(): string {
+    get GOOGLE_CLIENT_ID() {
         return this._GOOGLE_CLIENT_ID;
     }
-
-    public get GOOGLE_CLIENT_SECRET(): string {
+    get GOOGLE_CLIENT_SECRET() {
         return this._GOOGLE_CLIENT_SECRET;
     }
-
-    public get PAYSTACK_SECRET_KEY(): string {
+    get PAYSTACK_SECRET_KEY() {
         return this._PAYSTACK_SECRET_KEY;
     }
-
-    public get PAYSTACK_PUBLIC_KEY(): string {
+    get PAYSTACK_PUBLIC_KEY() {
         return this._PAYSTACK_PUBLIC_KEY;
     }
-
-    public get PAYSTACK_BASE_URL(): string {
+    get PAYSTACK_BASE_URL() {
         return this._PAYSTACK_BASE_URL;
     }
-
-    public get FLUTTER_SECRET_KEY(): string {
+    get FLUTTER_SECRET_KEY() {
         return this._FLUTTER_SECRET_KEY;
     }
-
-    public get FLUTTER_PUBLIC_KEY(): string {
+    get FLUTTER_PUBLIC_KEY() {
         return this._FLUTTER_PUBLIC_KEY;
     }
-
-    public get FLUTTER_ENCRYPTION_KEY(): string {
+    get FLUTTER_ENCRYPTION_KEY() {
         return this._FLUTTER_ENCRYPTION_KEY;
     }
-
-    public get FLUTTER_SECRET_HASH(): string {
+    get FLUTTER_SECRET_HASH() {
         return this._FLUTTER_SECRET_HASH;
     }
 }
-
-export default Config.getInstance();
+exports.Config = Config;
+exports.default = Config.getInstance();

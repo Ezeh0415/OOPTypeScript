@@ -2,6 +2,8 @@ import { IUser, UserModel } from "../../Auth/Client/Model/UserSchema";
 import { Config } from "../../../Config/DevConfig";
 import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType } from "../Model/PaymentSchema";
 import axios from "axios";
+import { IBank, IRecipient } from "../Interface/TransferRecipt";
+import { PaymentToken } from "../../../Middleware/Payment/PaymentToken";
 const crypto = require('crypto');
 
 
@@ -10,6 +12,7 @@ export class PaymentService {
     private config: Config;
     private user = UserModel;
     private paymentModel = PaymentModel;
+    private flutterToken = PaymentToken.getInstance();
 
     private constructor() {
         this.config = Config.getInstance();
@@ -104,9 +107,9 @@ export class PaymentService {
 
         const event = body;
 
-        console.log(event)
+
         switch (event.event) {
-            case "charge success":
+            case "charge.success":
                 const success = await this.paymentModel.findOneAndUpdate(
                     { reference: event.data.reference },
                     {
@@ -124,7 +127,7 @@ export class PaymentService {
                 )
                 break;
 
-            case "charge failed":
+            case "charge.failed":
                 const failed = await this.paymentModel.findOneAndUpdate(
                     { reference: event.data.reference },
                     {
@@ -153,4 +156,32 @@ export class PaymentService {
 
 
     }
+
+    // async createTransferRecipient(userData: IBank): Promise<IRecipient | null> {
+
+    //     const accessToken = await this.flutterToken.flutterToken();
+    //     const traceId = crypto.randomUUID();
+    //     const idempotencyKey = crypto.randomUUID();
+    //     const recipt = await axios.post('https://developersandbox-api.flutterwave.com/transfers/recipients',
+            
+    //         {
+    //             "type": "bank_ngn",
+    //             "bank": {
+    //                 "account_number": userData.account_number,
+    //                 "code": userData.code,
+    //             }
+    //         },
+    //         {
+    //             headers: {
+    //                 'Authorization': `Bearer ${accessToken}`,
+    //                 'content-type': 'application/json',
+    //                 'x-Trace-Id': `${traceId}`,
+    //                 'X-Idempotency-Key': `${idempotencyKey}`,
+
+    //             }
+    //         }
+
+            
+    //     )
+    // }
 }

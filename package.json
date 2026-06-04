@@ -34,11 +34,11 @@
   "name": "todoproject",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/server.js",
+  "main": "dist/devApp.js",
   "scripts": {
     "dev": "tsc --watch",
     "start": "nodemon App.ts",
-    "devStart": "nodemon DevApp.ts",
+    "devStart": "nodemon dist/DevApp.js",
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
