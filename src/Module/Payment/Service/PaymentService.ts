@@ -12,7 +12,7 @@ export class PaymentService {
     private config: Config;
     private user = UserModel;
     private paymentModel = PaymentModel;
-    private flutterToken = PaymentToken.getInstance();
+    private paymentToken = PaymentToken.getInstance();
 
     private constructor() {
         this.config = Config.getInstance();
@@ -34,7 +34,7 @@ export class PaymentService {
         }
     }
 
-    async CreatePayment(userData: any) {
+    public async CreatePayment(userData: any) {
         const { userId, amount } = userData;
 
         const isExist = await this.isUserExists(userId);
@@ -90,7 +90,7 @@ export class PaymentService {
         return result;
     }
 
-    async PaystackWebhook(returnData: any) {
+    public async PaystackWebhook(returnData: any) {
         const { signature, body } = returnData;
 
         if (!signature) {
@@ -157,31 +157,57 @@ export class PaymentService {
 
     }
 
-    // async createTransferRecipient(userData: IBank): Promise<IRecipient | null> {
+    public async createTransferRecipient(userData: IBank): Promise<IRecipient | null> {
 
-    //     const accessToken = await this.flutterToken.flutterToken();
-    //     const traceId = crypto.randomUUID();
-    //     const idempotencyKey = crypto.randomUUID();
-    //     const recipt = await axios.post('https://developersandbox-api.flutterwave.com/transfers/recipients',
-            
-    //         {
-    //             "type": "bank_ngn",
-    //             "bank": {
-    //                 "account_number": userData.account_number,
-    //                 "code": userData.code,
-    //             }
-    //         },
-    //         {
-    //             headers: {
-    //                 'Authorization': `Bearer ${accessToken}`,
-    //                 'content-type': 'application/json',
-    //                 'x-Trace-Id': `${traceId}`,
-    //                 'X-Idempotency-Key': `${idempotencyKey}`,
+        const accessToken = await this.paymentToken.flutterToken();
+        const traceId = crypto.randomUUID();
+        const idempotencyKey = crypto.randomUUID();
 
-    //             }
-    //         }
+        if (!accessToken) {
+            throw new Error("token is now available");
+        }
+        const response = await axios.post('https://developersandbox-api.flutterwave.com/transfers/recipients',
 
-            
-    //     )
-    // }
+            {
+                "type": "bank_ngn",
+                "bank": {
+                    "account_number": userData.account_number,
+                    "code": userData.code,
+                }
+            },
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'content-type': 'application/json',
+                    'x-Trace-Id': `${traceId}`,
+                    'X-Idempotency-Key': `${idempotencyKey}`,
+
+                }
+            }
+
+
+        )
+
+        const result: IRecipient = {
+            status: response.data.status,
+            message: response.data.message,
+            data: {
+                type: response.data.type,
+                id: response.data.id,
+                name: {
+                    first: response.data.name.first,
+                    last: response.data.name.last
+                },
+                currency: response.data.currency,
+                bank: {
+                    account_number: response.data.bank.account_number,
+                    code: response.data.bank.code
+                }
+            }
+        };
+
+        console.log(result);
+
+        return response.data;
+    }
 }

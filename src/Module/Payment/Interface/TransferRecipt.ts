@@ -1,6 +1,6 @@
 export interface IBank {
-    account_number: number,
-    code: number,
+    account_number: string,
+    code: string,
 }
 
 export interface IRecipient {
@@ -15,10 +15,10 @@ export interface IRecipient {
         },
         currency: string,
         bank: {
-            account_number: number,
-            code: number,
+            account_number: string,
+            code: string,
         }
     };
-    traceId:string;
-    IdempotencyKey:string;
+    // traceId:string;
+    // IdempotencyKey:string;
 }

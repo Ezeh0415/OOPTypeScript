@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../../../Config/JWTAUth";
 import { ErrorHandler } from "../../../Utils/ZodError/ZodError";
-import { createPayment } from "../ZodValidtion/paystack/CreatePayment";
+import { createPayment, initTransfer } from "../ZodValidtion/CreatePayment";
 import { PaymentService } from "../Service/PaymentService";
 import { success } from "zod";
 
@@ -70,6 +70,33 @@ export class PaymentContr {
             res.status(200).send('payment successful');
 
         } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
+    async createTransferRecipient(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const validateData = initTransfer.parse(req.body);
+
+            const result = await this.paymentService.createTransferRecipient(validateData);
+
+            res.status(200).json({
+                message: "transfer payment initialize",
+                result
+            })
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
             const errorMessage = error instanceof Error ? error.message : String(error);
 
             res.status(500).json({

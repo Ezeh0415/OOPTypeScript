@@ -14,7 +14,7 @@ class PaymentService {
     constructor() {
         this.user = UserSchema_1.UserModel;
         this.paymentModel = PaymentSchema_1.PaymentModel;
-        this.flutterToken = PaymentToken_1.PaymentToken.getInstance();
+        this.paymentToken = PaymentToken_1.PaymentToken.getInstance();
         this.config = DevConfig_1.Config.getInstance();
     }
     static getInstance() {
@@ -120,6 +120,47 @@ class PaymentService {
         }
         ;
         return;
+    }
+    async createTransferRecipient(userData) {
+        const accessToken = await this.paymentToken.flutterToken();
+        const traceId = crypto.randomUUID();
+        const idempotencyKey = crypto.randomUUID();
+        if (!accessToken) {
+            throw new Error("token is now available");
+        }
+        const response = await axios_1.default.post('https://developersandbox-api.flutterwave.com/transfers/recipients', {
+            "type": "bank_ngn",
+            "bank": {
+                "account_number": userData.account_number,
+                "code": userData.code,
+            }
+        }, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'content-type': 'application/json',
+                'x-Trace-Id': `${traceId}`,
+                'X-Idempotency-Key': `${idempotencyKey}`,
+            }
+        });
+        const result = {
+            status: response.data.status,
+            message: response.data.message,
+            data: {
+                type: response.data.type,
+                id: response.data.id,
+                name: {
+                    first: response.data.name.first,
+                    last: response.data.name.last
+                },
+                currency: response.data.currency,
+                bank: {
+                    account_number: response.data.bank.account_number,
+                    code: response.data.bank.code
+                }
+            }
+        };
+        console.log(result);
+        return response.data;
     }
 }
 exports.PaymentService = PaymentService;

@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PaymentContr = void 0;
 const ZodError_1 = require("../../../Utils/ZodError/ZodError");
-const CreatePayment_1 = require("../ZodValidtion/paystack/CreatePayment");
+const CreatePayment_1 = require("../ZodValidtion/CreatePayment");
 const PaymentService_1 = require("../Service/PaymentService");
 class PaymentContr {
     constructor() {
@@ -55,6 +55,28 @@ class PaymentContr {
             res.status(200).send('payment successful');
         }
         catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            });
+            return;
+        }
+    }
+    async createTransferRecipient(req, res) {
+        try {
+            const validateData = CreatePayment_1.initTransfer.parse(req.body);
+            const result = await this.paymentService.createTransferRecipient(validateData);
+            res.status(200).json({
+                message: "transfer payment initialize",
+                result
+            });
+        }
+        catch (error) {
+            if (ZodError_1.ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
             const errorMessage = error instanceof Error ? error.message : String(error);
             res.status(500).json({
                 success: false,

@@ -49,5 +49,10 @@ router.post('/deposit/webhook',
     (req, res) => paymentContr.PaystackWebhhok(req, res)
 )
 
+router.post('/flutterWave/transfer',
+    Authentication.authenticate.bind(Authentication),
+    (req, res) => paymentContr.createTransferRecipient(req, res)
+)
+
 
 export default router;
