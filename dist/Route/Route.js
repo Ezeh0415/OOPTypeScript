@@ -68,4 +68,5 @@ router.get("/google/callback", Passport_1.default.authenticate("google", {
 router.post('/paystack/deposit', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.CreatePayment(req, res));
 router.post('/deposit/webhook', express_2.default.json(), (req, res) => paymentContr.PaystackWebhhok(req, res));
 router.post('/flutterWave/transfer', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.createTransferRecipient(req, res));
+router.post('/flutterWave/initiateTransfer', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.initiateTransfer(req, res));
 exports.default = router;

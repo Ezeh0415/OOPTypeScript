@@ -7,6 +7,7 @@ const PaymentService_1 = require("../Service/PaymentService");
 class PaymentContr {
     constructor() {
         this.paymentService = PaymentService_1.PaymentService.getInstance();
+        this.createdTransfer = null;
     }
     static getInstance() {
         if (!PaymentContr.instance) {
@@ -69,10 +70,43 @@ class PaymentContr {
             const validateData = CreatePayment_1.initTransfer.parse(req.body);
             const result = await this.paymentService.createTransferRecipient(validateData);
             console.log(result);
+            this.createdTransfer = result;
             res.status(200).json({
                 message: "transfer payment initialize",
                 name: result?.data.name,
                 bank: result?.data.bank
+            });
+        }
+        catch (error) {
+            if (ZodError_1.ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            });
+            return;
+        }
+    }
+    async initiateTransfer(req, res) {
+        try {
+            const validateData = await CreatePayment_1.initPayment.parse(req.body);
+            const userId = req.user?.userId;
+            const recipientData = this.createdTransfer;
+            const userData = {
+                userId: userId,
+                amount: validateData.amount,
+                narration: validateData.narration,
+                recipient_id: recipientData.data.id,
+                reference: recipientData.traceId
+            };
+            // const result = await this.paymentService.initiateTransfer()
+            res.status(200).json({
+                status: true,
+                message: "transfer status pending",
+                result: userData
             });
         }
         catch (error) {

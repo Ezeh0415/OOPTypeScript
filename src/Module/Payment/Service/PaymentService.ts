@@ -1,8 +1,8 @@
 import { IUser, UserModel } from "../../Auth/Client/Model/UserSchema";
 import { Config } from "../../../Config/DevConfig";
-import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType } from "../Model/PaymentSchema";
+import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType, TransferAction, TransferType } from "../Model/PaymentSchema";
 import axios from "axios";
-import { IBank, IRecipient } from "../Interface/TransferRecipt";
+import { IBank, IRecipient, ITransfer } from "../Interface/TransferRecipt";
 import { PaymentToken } from "../../../Middleware/Payment/PaymentToken";
 const crypto = require('crypto');
 
@@ -265,5 +265,42 @@ export class PaymentService {
         }
 
         return null;
+    }
+
+    public async initiateTransfer(userData: any): Promise<ITransfer | null> {
+        const accessToken = await this.paymentToken.flutterToken();
+        const payload = {
+            action: TransferAction.INSTANT,
+            type: TransferType.WALLET,
+            reference: userData.traceId,
+            narration: userData.narration,
+            payment_instruction: {
+                source_currency: "NGN",
+                destination_currency: "NGN",
+                amount: {
+                    applies_to: "destination_currency",
+                    value: userData.amount
+                },
+                recipient_id: userData.id
+            }
+        }
+        const response = await axios.post('https://developersandbox-api.flutterwave.com/transfers',
+            payload,
+            {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json',
+                    'X-Trace-Id': userData?.traceId,
+                    'X-Idempotency-Key': userData?.idempotencyKey,
+                    'X-Scenario-Key': "successful"
+                }
+            }
+        )
+
+        const responseData = response.data.data;
+
+        console.log(responseData)
+
+        return responseData
     }
 }

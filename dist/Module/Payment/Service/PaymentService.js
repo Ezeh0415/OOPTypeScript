@@ -215,5 +215,35 @@ class PaymentService {
         }
         return null;
     }
+    async initiateTransfer(userData) {
+        const accessToken = await this.paymentToken.flutterToken();
+        const payload = {
+            action: PaymentSchema_1.TransferAction.INSTANT,
+            type: PaymentSchema_1.TransferType.WALLET,
+            reference: userData.traceId,
+            narration: userData.narration,
+            payment_instruction: {
+                source_currency: "NGN",
+                destination_currency: "NGN",
+                amount: {
+                    applies_to: "destination_currency",
+                    value: userData.amount
+                },
+                recipient_id: userData.id
+            }
+        };
+        const response = await axios_1.default.post('https://developersandbox-api.flutterwave.com/transfers', payload, {
+            headers: {
+                'Authorization': `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+                'X-Trace-Id': userData?.traceId,
+                'X-Idempotency-Key': userData?.idempotencyKey,
+                'X-Scenario-Key': "successful"
+            }
+        });
+        const responseData = response.data.data;
+        console.log(responseData);
+        return responseData;
+    }
 }
 exports.PaymentService = PaymentService;

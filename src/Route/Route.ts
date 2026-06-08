@@ -54,5 +54,10 @@ router.post('/flutterWave/transfer',
     (req, res) => paymentContr.createTransferRecipient(req, res)
 )
 
+router.post('/flutterWave/initiateTransfer',
+    Authentication.authenticate.bind(Authentication),
+    (req, res) => paymentContr.initiateTransfer(req, res)
+)
+
 
 export default router;

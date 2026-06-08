@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import { AuthRequest } from "../../../Config/JWTAUth";
 import { ErrorHandler } from "../../../Utils/ZodError/ZodError";
-import { createPayment, initTransfer } from "../ZodValidtion/CreatePayment";
+import { createPayment, initPayment, initTransfer } from "../ZodValidtion/CreatePayment";
 import { PaymentService } from "../Service/PaymentService";
-import { success } from "zod";
 
 export class PaymentContr {
     private static instance: PaymentContr;
     private paymentService = PaymentService.getInstance();
+    private createdTransfer: any = null;
 
     private constructor() { }
 
@@ -88,11 +88,52 @@ export class PaymentContr {
 
             const result = await this.paymentService.createTransferRecipient(validateData);
 
-            console.log(result)
+            console.log(result);
+            this.createdTransfer = result;
             res.status(200).json({
                 message: "transfer payment initialize",
                 name: result?.data.name,
                 bank: result?.data.bank
+            })
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
+    async initiateTransfer(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const validateData = await initPayment.parse(req.body);
+            const userId = req.user?.userId;
+            const recipientData = this.createdTransfer;
+
+            const userData = { 
+                userId: userId,
+                amount: validateData.amount,
+                narration: validateData.narration,
+                recipient_id:recipientData.data.id,
+                reference: recipientData.traceId
+            }
+
+            // const result = await this.paymentService.initiateTransfer()
+
+
+
+            res.status(200).json({
+                status: true,
+                message: "transfer status pending",
+                result: userData
             })
 
         } catch (error) {
