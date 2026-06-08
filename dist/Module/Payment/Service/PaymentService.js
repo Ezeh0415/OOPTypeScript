@@ -126,41 +126,94 @@ class PaymentService {
         const traceId = crypto.randomUUID();
         const idempotencyKey = crypto.randomUUID();
         if (!accessToken) {
-            throw new Error("token is now available");
+            throw new Error("token is not available");
         }
-        const response = await axios_1.default.post('https://developersandbox-api.flutterwave.com/transfers/recipients', {
-            "type": "bank_ngn",
-            "bank": {
-                "account_number": userData.account_number,
-                "code": userData.code,
+        let recipientData = null;
+        try {
+            // Try to create a new recipient
+            const createResponse = await axios_1.default.post('https://developersandbox-api.flutterwave.com/transfers/recipients', {
+                "type": "bank_ngn",
+                "bank": {
+                    "account_number": userData.account_number,
+                    "code": userData.code,
+                }
+            }, {
+                headers: {
+                    'Authorization': `Bearer ${accessToken}`,
+                    'Content-Type': 'application/json', // Capitalized 'Content-Type'
+                    'x-Trace-Id': traceId,
+                    'X-Idempotency-Key': idempotencyKey,
+                }
+            });
+            if (createResponse.data?.status === "success") {
+                recipientData = createResponse.data.data;
             }
-        }, {
-            headers: {
-                'Authorization': `Bearer ${accessToken}`,
-                'content-type': 'application/json',
-                'x-Trace-Id': `${traceId}`,
-                'X-Idempotency-Key': `${idempotencyKey}`,
-            }
-        });
-        const result = {
-            status: response.data.status,
-            message: response.data.message,
-            data: {
-                type: response.data.type,
-                id: response.data.id,
-                name: {
-                    first: response.data.name.first,
-                    last: response.data.name.last
-                },
-                currency: response.data.currency,
-                bank: {
-                    account_number: response.data.bank.account_number,
-                    code: response.data.bank.code
+        }
+        catch (createError) {
+            // Handle creation errors (including 409 Conflict)
+            if (createError.response?.status === 409) {
+                console.log("Recipient already exists, searching for existing one...");
+                try {
+                    // Search for existing recipient
+                    const searchResponse = await axios_1.default.get(`https://developersandbox-api.flutterwave.com/transfers/recipients`, {
+                        params: {
+                            page: 1,
+                            page_size: 50 // Fetch up to 100 recipients
+                        },
+                        headers: {
+                            'Authorization': `Bearer ${accessToken}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    // console.log(searchResponse.data?.data?.recipients)
+                    if (searchResponse.data?.status === "success" &&
+                        searchResponse.data?.data?.recipients.length > 0) {
+                        // Take the first matching recipient
+                        const found = searchResponse.data.data.recipients.find((recipient) => {
+                            return recipient.bank?.account_number === userData.account_number &&
+                                recipient.bank?.code === userData.code;
+                        });
+                        recipientData = found;
+                    }
+                    else {
+                        console.error("No existing recipient found despite 409 error");
+                        return null;
+                    }
+                }
+                catch (searchError) {
+                    console.error("Search failed:", searchError.response?.data || searchError.message);
+                    return null;
                 }
             }
-        };
-        console.log(result);
-        return response.data;
+            else {
+                // Handle other errors (400, 401, 500, etc.)
+                console.error("Recipient creation failed:", createError.response?.data || createError.message);
+                return null;
+            }
+        }
+        // Build and return the result
+        if (recipientData) {
+            return {
+                status: "success",
+                message: "Recipient retrieved/created successfully",
+                data: {
+                    type: recipientData.type,
+                    id: recipientData.id,
+                    name: {
+                        first: recipientData.name?.first || "",
+                        last: recipientData.name?.last || ""
+                    },
+                    currency: recipientData.currency,
+                    bank: {
+                        account_number: recipientData.bank?.account_number || userData.account_number,
+                        code: recipientData.bank?.code || userData.code
+                    }
+                },
+                traceId: traceId,
+                IdempotencyKey: idempotencyKey
+            };
+        }
+        return null;
     }
 }
 exports.PaymentService = PaymentService;

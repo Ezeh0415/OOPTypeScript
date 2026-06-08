@@ -88,9 +88,11 @@ export class PaymentContr {
 
             const result = await this.paymentService.createTransferRecipient(validateData);
 
+            console.log(result)
             res.status(200).json({
                 message: "transfer payment initialize",
-                result
+                name: result?.data.name,
+                bank: result?.data.bank
             })
 
         } catch (error) {
