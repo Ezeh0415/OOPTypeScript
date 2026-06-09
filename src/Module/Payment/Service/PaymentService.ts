@@ -269,10 +269,19 @@ export class PaymentService {
 
     public async initiateTransfer(userData: any): Promise<ITransfer | null> {
         const accessToken = await this.paymentToken.flutterToken();
+        const user = await this.isUserExists(userData.userId);
+        const existingPayment = await this.paymentModel.findOne({
+            "flutterwave.idempotencyKey": userData.idempotencyKey
+        })
+
+        if (existingPayment) {
+            throw new Error("Duplicate Transaction detected");
+        }
+
         const payload = {
             action: TransferAction.INSTANT,
             type: TransferType.WALLET,
-            reference: userData.traceId,
+            reference: userData.reference,
             narration: userData.narration,
             payment_instruction: {
                 source_currency: "NGN",
@@ -284,13 +293,14 @@ export class PaymentService {
                 recipient_id: userData.id
             }
         }
+
         const response = await axios.post('https://developersandbox-api.flutterwave.com/transfers',
             payload,
             {
                 headers: {
                     'Authorization': `Bearer ${accessToken}`,
                     'Content-Type': 'application/json',
-                    'X-Trace-Id': userData?.traceId,
+                    'X-Trace-Id': userData?.reference,
                     'X-Idempotency-Key': userData?.idempotencyKey,
                     'X-Scenario-Key': "successful"
                 }
@@ -298,8 +308,45 @@ export class PaymentService {
         )
 
         const responseData = response.data.data;
+        const name = await `${responseData.recipient.name.first} ${responseData.recipient.name.last}`
 
-        console.log(responseData)
+        const transferData = {
+            userId: userData.userId,
+            amount: responseData.amount.value,
+            currency: responseData.recipient.currency,
+            status: PaymentStatus.PENDING,
+            paymentType: responseData.type,
+            provider: PaymentProvider.FLUTTERWAVE,
+            reference: responseData.reference,
+            customerEmail: user?.email,
+            customerName: name,
+            flutterwave: {
+                trfId: responseData.id,
+                flutterId: responseData.recipient.id,
+                idempotencyKey: userData.idempotencyKey,
+                traceId: responseData.reference,
+                action: TransferAction.INSTANT,
+                sourceCurrency: responseData.source_currency,
+                destinationCurrency: responseData.destination_currency,
+                narration: responseData.narration,
+                type: TransferType.BANK,
+                recipient: {
+                    type: TransferType.BANK,
+                    id: responseData.recipient.id,
+                    name: name,
+                    currency: responseData.recipient.currency,
+                    bank: {
+                        account_number: responseData.recipient.bank.account_number,
+                        code: responseData.recipient.bank.code
+                    }
+
+                }
+            }
+        }
+
+        await this.paymentModel.create(transferData)
+
+
 
         return responseData
     }

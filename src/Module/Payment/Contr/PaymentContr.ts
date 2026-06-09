@@ -7,7 +7,7 @@ import { PaymentService } from "../Service/PaymentService";
 export class PaymentContr {
     private static instance: PaymentContr;
     private paymentService = PaymentService.getInstance();
-    private createdTransfer: any = null;
+    private createdTransfer: Map<string, any> = new Map();
 
     private constructor() { }
 
@@ -87,9 +87,9 @@ export class PaymentContr {
             const validateData = initTransfer.parse(req.body);
 
             const result = await this.paymentService.createTransferRecipient(validateData);
+            const userId = req.user?.userId
 
-            console.log(result);
-            this.createdTransfer = result;
+            this.createdTransfer.set(userId, result);
             res.status(200).json({
                 message: "transfer payment initialize",
                 name: result?.data.name,
@@ -116,24 +116,31 @@ export class PaymentContr {
         try {
             const validateData = await initPayment.parse(req.body);
             const userId = req.user?.userId;
-            const recipientData = this.createdTransfer;
+            const recipientData = this.createdTransfer.get(userId);
 
-            const userData = { 
+            if (!recipientData) {
+                res.status(404).json({
+                    message: "error fetching recipent"
+                })
+            }
+
+            const userData = {
                 userId: userId,
                 amount: validateData.amount,
                 narration: validateData.narration,
-                recipient_id:recipientData.data.id,
-                reference: recipientData.traceId
+                id: recipientData.data.id,
+                reference: recipientData.traceId,
+                idempotencyKey: recipientData.IdempotencyKey
             }
 
-            // const result = await this.paymentService.initiateTransfer()
+            const result = await this.paymentService.initiateTransfer(userData);
 
 
 
             res.status(200).json({
                 status: true,
                 message: "transfer status pending",
-                result: userData
+                result: result
             })
 
         } catch (error) {

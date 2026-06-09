@@ -217,10 +217,17 @@ class PaymentService {
     }
     async initiateTransfer(userData) {
         const accessToken = await this.paymentToken.flutterToken();
+        const user = await this.isUserExists(userData.userId);
+        const existingPayment = await this.paymentModel.findOne({
+            "flutterwave.idempotencyKey": userData.idempotencyKey
+        });
+        if (existingPayment) {
+            throw new Error("Duplicate Transaction detected");
+        }
         const payload = {
             action: PaymentSchema_1.TransferAction.INSTANT,
             type: PaymentSchema_1.TransferType.WALLET,
-            reference: userData.traceId,
+            reference: userData.reference,
             narration: userData.narration,
             payment_instruction: {
                 source_currency: "NGN",
@@ -236,13 +243,46 @@ class PaymentService {
             headers: {
                 'Authorization': `Bearer ${accessToken}`,
                 'Content-Type': 'application/json',
-                'X-Trace-Id': userData?.traceId,
+                'X-Trace-Id': userData?.reference,
                 'X-Idempotency-Key': userData?.idempotencyKey,
                 'X-Scenario-Key': "successful"
             }
         });
         const responseData = response.data.data;
-        console.log(responseData);
+        const name = await `${responseData.recipient.name.first} ${responseData.recipient.name.last}`;
+        const transferData = {
+            userId: userData.userId,
+            amount: responseData.amount.value,
+            currency: responseData.recipient.currency,
+            status: PaymentSchema_1.PaymentStatus.PENDING,
+            paymentType: responseData.type,
+            provider: PaymentSchema_1.PaymentProvider.FLUTTERWAVE,
+            reference: responseData.reference,
+            customerEmail: user?.email,
+            customerName: name,
+            flutterwave: {
+                trfId: responseData.id,
+                flutterId: responseData.recipient.id,
+                idempotencyKey: userData.idempotencyKey,
+                traceId: responseData.reference,
+                action: PaymentSchema_1.TransferAction.INSTANT,
+                sourceCurrency: responseData.source_currency,
+                destinationCurrency: responseData.destination_currency,
+                narration: responseData.narration,
+                type: PaymentSchema_1.TransferType.BANK,
+                recipient: {
+                    type: PaymentSchema_1.TransferType.BANK,
+                    id: responseData.recipient.id,
+                    name: name,
+                    currency: responseData.recipient.currency,
+                    bank: {
+                        account_number: responseData.recipient.bank.account_number,
+                        code: responseData.recipient.bank.code
+                    }
+                }
+            }
+        };
+        await this.paymentModel.create(transferData);
         return responseData;
     }
 }
