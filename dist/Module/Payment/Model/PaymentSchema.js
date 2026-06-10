@@ -54,7 +54,7 @@ var PaymentStatus;
     PaymentStatus["SUCCESSFUL"] = "successful";
     PaymentStatus["FAILED"] = "failed";
     PaymentStatus["PROCESSING"] = "processing";
-    PaymentStatus["CANCELLED"] = "cancelled";
+    PaymentStatus["REVERSED"] = "reversed";
 })(PaymentStatus || (exports.PaymentStatus = PaymentStatus = {}));
 var TransferAction;
 (function (TransferAction) {

@@ -128,5 +128,24 @@ class PaymentContr {
             return;
         }
     }
+    async flutterWaveWebhook(req, res) {
+        try {
+            const response = req.body;
+            // console.log(response);
+            await this.paymentService.flutterWebhook(response);
+            res.status(200).json({
+                message: `Transfer Payment${response.data.status}`
+            });
+        }
+        catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            });
+            return;
+        }
+    }
 }
 exports.PaymentContr = PaymentContr;

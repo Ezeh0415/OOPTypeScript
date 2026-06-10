@@ -18,7 +18,7 @@ export enum PaymentStatus {
     SUCCESSFUL = "successful",
     FAILED = "failed",
     PROCESSING = "processing",
-    CANCELLED = "cancelled"
+    REVERSED = "reversed"
 }
 
 export enum TransferAction {

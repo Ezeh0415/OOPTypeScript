@@ -34,6 +34,16 @@ export class PaymentService {
         }
     }
 
+    private async constantTimeCompare(a: string, b: string): Promise<boolean> {
+        if (a.length !== b.length) return false;
+
+        let result = 0;
+        for (let i = 0; i < a.length; i++) {
+            result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+        }
+        return result === 0;
+    }
+
     public async CreatePayment(userData: any) {
         const { userId, amount } = userData;
 
@@ -115,6 +125,7 @@ export class PaymentService {
                     {
                         status: event.data.status,
                         amount: event.data.amount,
+                        completedAt: new Date(),
                         paystack: {
                             paidAt: new Date(),
                             authorizationCode: ""
@@ -302,7 +313,7 @@ export class PaymentService {
                     'Content-Type': 'application/json',
                     'X-Trace-Id': userData?.reference,
                     'X-Idempotency-Key': userData?.idempotencyKey,
-                    'X-Scenario-Key': "successful"
+                    'X-Scenario-Key': "scenario:failed"
                 }
             }
         )
@@ -315,7 +326,7 @@ export class PaymentService {
             amount: responseData.amount.value,
             currency: responseData.recipient.currency,
             status: PaymentStatus.PENDING,
-            paymentType: PaymentType.DEPOSIT,
+            paymentType: PaymentType.WITHDRAWAL,
             provider: PaymentProvider.FLUTTERWAVE,
             reference: responseData.reference,
             customerEmail: user?.email,
@@ -349,5 +360,42 @@ export class PaymentService {
 
 
         return responseData
+    }
+
+    public async flutterWebhook(response: any) {
+
+        const statusMap: Record<string, PaymentStatus> = {
+            'NEW': PaymentStatus.PENDING,
+            'PENDING': PaymentStatus.PENDING,
+            'SUCCESSFUL': PaymentStatus.SUCCESSFUL,
+            'FAILED': PaymentStatus.FAILED,
+            'REVERSED': PaymentStatus.REVERSED
+        };
+
+
+
+
+        const updateResult = await this.paymentModel.updateOne(
+            { "flutterwave.trfId": response.data.id },
+            {
+                $set: {
+                    status: statusMap[response.data.status as string] || PaymentStatus.PENDING,
+                    completedAt: new Date()
+                }
+            }
+        );
+
+
+        if (updateResult.matchedCount === 0) {
+            throw new Error(`No payment found with trfId: ${response.id}`);
+            // Handle - maybe create a log or retry later
+        }
+
+
+
+        if (updateResult.modifiedCount === 0) {
+            throw new Error(`Payment found but status unchanged for trfId: ${response.id}`);
+        }
+
     }
 }

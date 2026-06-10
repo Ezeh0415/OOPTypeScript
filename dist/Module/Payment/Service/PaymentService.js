@@ -32,6 +32,15 @@ class PaymentService {
             throw new Error("user not found");
         }
     }
+    async constantTimeCompare(a, b) {
+        if (a.length !== b.length)
+            return false;
+        let result = 0;
+        for (let i = 0; i < a.length; i++) {
+            result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+        }
+        return result === 0;
+    }
     async CreatePayment(userData) {
         const { userId, amount } = userData;
         const isExist = await this.isUserExists(userId);
@@ -92,6 +101,7 @@ class PaymentService {
                 const success = await this.paymentModel.findOneAndUpdate({ reference: event.data.reference }, {
                     status: event.data.status,
                     amount: event.data.amount,
+                    completedAt: new Date(),
                     paystack: {
                         paidAt: new Date(),
                         authorizationCode: ""
@@ -245,7 +255,7 @@ class PaymentService {
                 'Content-Type': 'application/json',
                 'X-Trace-Id': userData?.reference,
                 'X-Idempotency-Key': userData?.idempotencyKey,
-                'X-Scenario-Key': "successful"
+                'X-Scenario-Key': "scenario:failed"
             }
         });
         const responseData = response.data.data;
@@ -255,7 +265,7 @@ class PaymentService {
             amount: responseData.amount.value,
             currency: responseData.recipient.currency,
             status: PaymentSchema_1.PaymentStatus.PENDING,
-            paymentType: PaymentSchema_1.PaymentType.DEPOSIT,
+            paymentType: PaymentSchema_1.PaymentType.WITHDRAWAL,
             provider: PaymentSchema_1.PaymentProvider.FLUTTERWAVE,
             reference: responseData.reference,
             customerEmail: user?.email,
@@ -284,6 +294,28 @@ class PaymentService {
         };
         await this.paymentModel.create(transferData);
         return responseData;
+    }
+    async flutterWebhook(response) {
+        const statusMap = {
+            'NEW': PaymentSchema_1.PaymentStatus.PENDING,
+            'PENDING': PaymentSchema_1.PaymentStatus.PENDING,
+            'SUCCESSFUL': PaymentSchema_1.PaymentStatus.SUCCESSFUL,
+            'FAILED': PaymentSchema_1.PaymentStatus.FAILED,
+            'REVERSED': PaymentSchema_1.PaymentStatus.REVERSED
+        };
+        const updateResult = await this.paymentModel.updateOne({ "flutterwave.trfId": response.data.id }, {
+            $set: {
+                status: statusMap[response.data.status] || PaymentSchema_1.PaymentStatus.PENDING,
+                completedAt: new Date()
+            }
+        });
+        if (updateResult.matchedCount === 0) {
+            throw new Error(`No payment found with trfId: ${response.id}`);
+            // Handle - maybe create a log or retry later
+        }
+        if (updateResult.modifiedCount === 0) {
+            throw new Error(`Payment found but status unchanged for trfId: ${response.id}`);
+        }
     }
 }
 exports.PaymentService = PaymentService;
