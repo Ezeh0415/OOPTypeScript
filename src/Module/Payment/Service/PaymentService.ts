@@ -315,7 +315,7 @@ export class PaymentService {
             amount: responseData.amount.value,
             currency: responseData.recipient.currency,
             status: PaymentStatus.PENDING,
-            paymentType: responseData.type,
+            paymentType: PaymentType.DEPOSIT,
             provider: PaymentProvider.FLUTTERWAVE,
             reference: responseData.reference,
             customerEmail: user?.email,
