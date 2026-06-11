@@ -231,7 +231,7 @@ export class AuthService {
             throw new Error("user not found ");
         }
 
-        const id = isExist?._id as  object
+        const id = isExist?._id as object
         const email = isExist?.email as string
 
         const refreshToken = await this.tokenService.getJwtToken(id, email);
@@ -240,5 +240,40 @@ export class AuthService {
         isExist.save();
 
         return isExist;
+    }
+
+    async userInfo(userData: any): Promise<boolean> {
+        const updateUserInfo = await this.user.updateOne(
+            { _id: userData.userId },
+            {
+                $set: {
+                    address: {
+                        city: userData.city,
+                        country: userData.country,
+                        line1: userData.line1,
+                        line2: userData.line2 || "",
+                        postal_code: userData.postalCode,
+                        state: userData.state
+                    },
+                    phone: {
+                        country_code: userData.countryCode,
+                        number: userData.number
+                    }
+                }
+            }
+        );
+
+        // Check if user exists
+        if (updateUserInfo.matchedCount === 0) {
+            throw new Error('User not found');
+        }
+
+        // Check if address was updated
+        if (updateUserInfo.modifiedCount === 0) {
+            // Address might be the same as before
+            throw new Error('Address already up to date or no changes made');
+        }
+
+        return true
     }
 }

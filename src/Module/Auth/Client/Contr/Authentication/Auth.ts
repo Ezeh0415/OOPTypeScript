@@ -8,6 +8,8 @@ import { OtpValidation } from "../../ZodValidation/Otp";
 import { ResendOtp } from "../../ZodValidation/ResendOtp";
 import { ResetPassword } from "../../ZodValidation/ResetPassword";
 import { GUser } from "../../../../../Middleware/Passport.ts/Passport";
+import { AuthRequest } from "../../../../../Config/JWTAUth";
+import { userInfo } from "../../ZodValidation/Info";
 
 export class AuthContr {
     private static instance: AuthContr;
@@ -232,6 +234,45 @@ export class AuthContr {
             return;
         } catch (error) {
             next(error)
+        }
+    }
+
+    public async userInfo(req: AuthRequest, res: Response): Promise<void> {
+        try {
+
+            const validateData = await userInfo.parse(req.body);
+            const userId = req.user?.userId;
+
+            const userData = {
+                userId: userId,
+                city: validateData.city,
+                country: validateData.country,
+                line1: validateData.line1,
+                line2: validateData.line2,
+                postalCode: validateData.postalCode,
+                state: validateData.state,
+                countryCode: validateData.countryCode,
+                number: validateData.number
+            }
+
+            const result = await this.authService.userInfo(userData);
+
+            res.status(200).json({
+                status: result,
+            })
+
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                status: false,
+                message: "sever error",
+                error: errorMessage
+            })
         }
     }
 }
