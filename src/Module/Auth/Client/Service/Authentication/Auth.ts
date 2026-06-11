@@ -61,9 +61,8 @@ export class AuthService {
         }
 
         const user = new this.user(newUser);
-        const token = await this.tokenService.getRefreshJwtToken(user?._id, user?.email);
-        user.refreshToken = token;
-        await user.save();
+
+        user.save();
         return user;
 
 

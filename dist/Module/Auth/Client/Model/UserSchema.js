@@ -5,6 +5,7 @@ const mongoose_1 = require("mongoose");
 const UserSchema = new mongoose_1.Schema({
     googleId: { type: String, required: false },
     firstName: { type: String, required: true },
+    middleName: { type: String, required: false },
     lastName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
@@ -16,6 +17,18 @@ const UserSchema = new mongoose_1.Schema({
     loginFailedCount: { type: Number, required: false, default: 0 },
     lockedUntil: { type: Date, required: false },
     refreshToken: { type: String, required: false },
+    address: {
+        city: { type: String },
+        country: { type: String },
+        line1: { type: String },
+        line2: { type: String },
+        postal_code: { type: Number },
+        state: { type: String }
+    },
+    phone: {
+        country_code: { type: String },
+        number: { type: Number }
+    }
 }, {
     timestamps: true
 });

@@ -51,9 +51,7 @@ class AuthService {
             otpExpiry: new Date(Date.now() + 10 * 60 * 1000),
         };
         const user = new this.user(newUser);
-        const token = await this.tokenService.getRefreshJwtToken(user?._id, user?.email);
-        user.refreshToken = token;
-        await user.save();
+        user.save();
         return user;
     }
     async login(userData) {
@@ -160,6 +158,34 @@ class AuthService {
         isExist.refreshToken = refreshToken;
         isExist.save();
         return isExist;
+    }
+    async userInfo(userData) {
+        const updateUserInfo = await this.user.updateOne({ _id: userData.userId }, {
+            $set: {
+                address: {
+                    city: userData.city,
+                    country: userData.country,
+                    line1: userData.line1,
+                    line2: userData.line2 || "",
+                    postal_code: userData.postalCode,
+                    state: userData.state
+                },
+                phone: {
+                    country_code: userData.countryCode,
+                    number: userData.number
+                }
+            }
+        });
+        // Check if user exists
+        if (updateUserInfo.matchedCount === 0) {
+            throw new Error('User not found');
+        }
+        // Check if address was updated
+        if (updateUserInfo.modifiedCount === 0) {
+            // Address might be the same as before
+            throw new Error('Address already up to date or no changes made');
+        }
+        return true;
     }
 }
 exports.AuthService = AuthService;

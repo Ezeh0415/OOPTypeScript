@@ -32,8 +32,6 @@ export class AuthContr {
 
             const user = await this.authService.register(validation);
 
-            const token = await this.tokenService.getJwtToken(user?._id, user?.email);
-
             const userObject = (user as any)?.toObject && typeof (user as any).toObject === 'function'
                 ? (user as any).toObject()
                 : (user as any) || {};
@@ -44,7 +42,6 @@ export class AuthContr {
                 success: true,
                 message: "user registered successfully",
                 user: safeUser,
-                token
 
             })
         } catch (error) {

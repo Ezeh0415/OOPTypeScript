@@ -9,6 +9,7 @@ const Login_1 = require("../../ZodValidation/Login");
 const Otp_1 = require("../../ZodValidation/Otp");
 const ResendOtp_1 = require("../../ZodValidation/ResendOtp");
 const ResetPassword_1 = require("../../ZodValidation/ResetPassword");
+const Info_1 = require("../../ZodValidation/Info");
 class AuthContr {
     constructor() {
         this.authService = Auth_1.AuthService.getInstance();
@@ -24,7 +25,6 @@ class AuthContr {
         try {
             const validation = Registration_1.Register.parse(req.body);
             const user = await this.authService.register(validation);
-            const token = await this.tokenService.getJwtToken(user?._id, user?.email);
             const userObject = user?.toObject && typeof user.toObject === 'function'
                 ? user.toObject()
                 : user || {};
@@ -34,7 +34,6 @@ class AuthContr {
                 success: true,
                 message: "user registered successfully",
                 user: safeUser,
-                token
             });
         }
         catch (error) {
@@ -180,6 +179,38 @@ class AuthContr {
         }
         catch (error) {
             next(error);
+        }
+    }
+    async userInfo(req, res) {
+        try {
+            const validateData = await Info_1.userInfo.parse(req.body);
+            const userId = req.user?.userId;
+            const userData = {
+                userId: userId,
+                city: validateData.city,
+                country: validateData.country,
+                line1: validateData.line1,
+                line2: validateData.line2,
+                postalCode: validateData.postalCode,
+                state: validateData.state,
+                countryCode: validateData.countryCode,
+                number: validateData.number
+            };
+            const result = await this.authService.userInfo(userData);
+            res.status(200).json({
+                status: result,
+            });
+        }
+        catch (error) {
+            if (ZodError_1.ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            res.status(500).json({
+                status: false,
+                message: "sever error",
+                error: errorMessage
+            });
         }
     }
 }

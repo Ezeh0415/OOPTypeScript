@@ -21,6 +21,11 @@ router.post("/resendOtp", (req, res) => authContr.resendOtp(req, res));
 router.post("/forgotPassword", (req, res) => authContr.forgotPassword(req, res));
 router.post("/resetPassword", (req, res) => authContr.resetPassword(req, res));
 
+// user info 
+router.post("/userInfo",
+    Authentication.authenticate.bind(Authentication),
+    (req, res) => authContr.userInfo(req, res)
+)
 
 // Google Auth Route - Redirect to Google
 router.get('/google',

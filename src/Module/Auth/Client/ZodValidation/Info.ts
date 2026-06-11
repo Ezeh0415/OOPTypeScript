@@ -7,6 +7,6 @@ export const userInfo = z.object({
     line2: z.string().optional(),
     postalCode: z.number().int("Must be a whole number").positive("Must be positive"),
     state: z.string().min(1, "State is required"),
-    countryCode: z.string().length(2, "Must be 2 characters (e.g., NG, US)"),
+    countryCode: z.string(),
     number: z.number().int("Must be a whole number").positive("Must be positive")
 });
