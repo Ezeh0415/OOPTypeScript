@@ -32,15 +32,6 @@ class PaymentService {
             throw new Error("user not found");
         }
     }
-    async constantTimeCompare(a, b) {
-        if (a.length !== b.length)
-            return false;
-        let result = 0;
-        for (let i = 0; i < a.length; i++) {
-            result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-        }
-        return result === 0;
-    }
     async CreatePayment(userData) {
         const { userId, amount } = userData;
         const isExist = await this.isUserExists(userId);

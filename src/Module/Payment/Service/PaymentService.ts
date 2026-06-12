@@ -34,16 +34,6 @@ export class PaymentService {
         }
     }
 
-    private async constantTimeCompare(a: string, b: string): Promise<boolean> {
-        if (a.length !== b.length) return false;
-
-        let result = 0;
-        for (let i = 0; i < a.length; i++) {
-            result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-        }
-        return result === 0;
-    }
-
     public async CreatePayment(userData: any) {
         const { userId, amount } = userData;
 
@@ -361,9 +351,7 @@ export class PaymentService {
 
         return responseData
     }
-
     
-
     public async flutterWebhook(response: any) {
 
         const statusMap: Record<string, PaymentStatus> = {

@@ -76,6 +76,8 @@ export interface IAmount {
     applies_to: string;
 }
 
+
+
 // Main unified Payment interface
 export interface IPayment extends Document {
     // Core fields
