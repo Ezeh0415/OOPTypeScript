@@ -56,6 +56,7 @@ export interface IFlutterwaveMetadata {
     destinationCurrency?: string;
     narration?: string;
     [key: string]: any;
+    meta: object;
 }
 
 // Recipient interface for transfers
@@ -229,7 +230,8 @@ const PaymentSchema = new Schema<IPayment>(
                     account_number: { type: String },
                     code: { type: String }
                 }
-            }
+            },
+            meta: {}
         },
 
         // Refund fields

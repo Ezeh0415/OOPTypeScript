@@ -351,7 +351,69 @@ export class PaymentService {
 
         return responseData
     }
-    
+
+    public async ceateCustomer(userId: string): Promise<object> {
+        const accessToken = await this.paymentToken.flutterToken();
+        const traceId = crypto.randomUUID();
+        const idempotencyKey = crypto.randomUUID();
+
+        if (!accessToken) {
+            throw new Error("token is not available");
+        }
+
+        const user = await this.isUserExists(userId);
+
+        if (!user) {
+            throw new Error("user not found");
+        }
+
+        const result = await axios.post('https://developersandbox-api.flutterwave.com/customers',
+            {
+                "address": {
+                    "city": user?.address?.city,
+                    "country": user?.address?.country,
+                    "line1": user?.address?.line1,
+                    "line2": user?.address?.line2,
+                    "postal_code": user?.address?.postal_code,
+                    "state": user?.address?.state
+                },
+
+                "name": {
+                    "first": user.firstName,
+                    "middle": user.lastName.slice(0, 1),
+                    "last": user.lastName
+                },
+                "phone": {
+                    "country_code": user.phone?.country_code,
+                    "number": user.phone?.number
+                },
+                "email": user.email
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                    "X-Trace-Id": `${traceId}`,
+                }
+            }
+        )
+
+        const customer = {
+            userId: userId,
+            flutterwave: {
+                flutterId: result.data.id,
+                traceId: traceId,
+                meta: {
+                    customer: result.data
+                }
+            }
+        }
+
+        
+
+
+    }
+
     public async flutterWebhook(response: any) {
 
         const statusMap: Record<string, PaymentStatus> = {
