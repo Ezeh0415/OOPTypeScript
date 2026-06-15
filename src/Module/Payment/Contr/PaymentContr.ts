@@ -3,6 +3,7 @@ import { AuthRequest } from "../../../Config/JWTAUth";
 import { ErrorHandler } from "../../../Utils/ZodError/ZodError";
 import { createPayment, initPayment, initTransfer } from "../ZodValidtion/CreatePayment";
 import { PaymentService } from "../Service/PaymentService";
+import { cardInfo } from "../ZodValidtion/CardInfo";
 
 export class PaymentContr {
     private static instance: PaymentContr;
@@ -159,15 +160,50 @@ export class PaymentContr {
         }
     }
 
+    async getCardInfo(req: AuthRequest, res: Response): Promise<void> {
+        try {
+            const validatedData = cardInfo.parse(req.body);
+
+            const userData = {
+                userId: req.user?.userId,
+                card_number: validatedData.card_number,
+                card_expiry_month: validatedData.expiry_month,
+                card_expiry_year: validatedData.expiry_year,
+                card_cvv:validatedData.card_cvv
+            }
+
+            const result = await this.paymentService.getCardInfo(userData);
+
+            res.status(200).json({
+                status:"success",
+                result
+            })
+        } catch (error) {
+            if (ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+
+            const errorMessage = error instanceof Error ? error.message : String(error);
+
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            })
+
+            return;
+        }
+    }
+
     async flutterWaveWebhook(req: Request, res: Response): Promise<void> {
         try {
             const response = req.body;
             // console.log(response);
 
-             await this.paymentService.flutterWebhook(response)
+            await this.paymentService.flutterWebhook(response)
 
             res.status(200).json({
-                message:`Transfer Payment${response.data.status}`
+                message: `Transfer Payment${response.data.status}`
             })
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);

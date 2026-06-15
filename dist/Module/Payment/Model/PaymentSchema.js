@@ -181,7 +181,12 @@ const PaymentSchema = new mongoose_1.Schema({
                 account_number: { type: String },
                 code: { type: String }
             }
-        }
+        },
+        card: {
+            customer_id: { type: String },
+            payment_method_id: { type: String }
+        },
+        meta: {}
     },
     // Refund fields
     originalPaymentId: {

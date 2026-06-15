@@ -4,6 +4,7 @@ exports.PaymentContr = void 0;
 const ZodError_1 = require("../../../Utils/ZodError/ZodError");
 const CreatePayment_1 = require("../ZodValidtion/CreatePayment");
 const PaymentService_1 = require("../Service/PaymentService");
+const CardInfo_1 = require("../ZodValidtion/CardInfo");
 class PaymentContr {
     constructor() {
         this.paymentService = PaymentService_1.PaymentService.getInstance();
@@ -113,6 +114,35 @@ class PaymentContr {
                 status: true,
                 message: "transfer status pending",
                 result: result
+            });
+        }
+        catch (error) {
+            if (ZodError_1.ErrorHandler.handleZodError(res, error)) {
+                return;
+            }
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            res.status(500).json({
+                success: false,
+                message: 'internal server error',
+                error: errorMessage,
+            });
+            return;
+        }
+    }
+    async getCardInfo(req, res) {
+        try {
+            const validatedData = CardInfo_1.cardInfo.parse(req.body);
+            const userData = {
+                userId: req.user?.userId,
+                card_number: validatedData.card_number,
+                card_expiry_month: validatedData.expiry_month,
+                card_expiry_year: validatedData.expiry_year,
+                card_cvv: validatedData.card_cvv
+            };
+            const result = await this.paymentService.getCardInfo(userData);
+            res.status(200).json({
+                status: "success",
+                result
             });
         }
         catch (error) {

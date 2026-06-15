@@ -4,12 +4,16 @@ import { PaymentModel, PaymentProvider, PaymentStatus, PaymentType, TransferActi
 import axios from "axios";
 import { IBank, IRecipient, ITransfer } from "../Interface/TransferRecipt";
 import { PaymentToken } from "../../../Middleware/Payment/PaymentToken";
+import { ICardInfo, ICardObject } from "../Interface/CardInfo";
+import { encryptAES } from "../../../Utils/Encription/Encrypt";
+import { OtpService } from "../../../Utils/GenerateOtp/OtpGenerate";
 const crypto = require('crypto');
 
 
 export class PaymentService {
     private static instance: PaymentService;
     private config: Config;
+    private otpService = OtpService.getInstance();
     private user = UserModel;
     private paymentModel = PaymentModel;
     private paymentToken = PaymentToken.getInstance();
@@ -352,7 +356,7 @@ export class PaymentService {
         return responseData
     }
 
-    public async ceateCustomer(userId: string): Promise<object> {
+    public async ceateCustomer(userId: string): Promise<any> {
         const accessToken = await this.paymentToken.flutterToken();
         const traceId = crypto.randomUUID();
         const idempotencyKey = crypto.randomUUID();
@@ -403,15 +407,81 @@ export class PaymentService {
             flutterwave: {
                 flutterId: result.data.id,
                 traceId: traceId,
+                card: {
+                    customer_id: result.data.id
+                },
                 meta: {
                     customer: result.data
                 }
             }
         }
 
-        
+        console.log(result)
 
+        await this.paymentModel.create(customer);
 
+        return {
+            traceId,
+            idempotencyKey
+        }
+    }
+
+    public async getCardInfo(userData: Partial<ICardInfo>): Promise<ICardObject> {
+        const accessToken = await this.paymentToken.flutterToken();
+        const { userId, card_number, card_expiry_month, card_expiry_year, card_cvv } = userData;
+
+        if (!userId || !card_number || !card_expiry_month || !card_expiry_year || !card_cvv) {
+            throw new Error('Missing card information');
+        }
+
+        const customerResult = await this.ceateCustomer(userId);
+
+        const nonce: any = this.otpService.NewOtp(12);
+
+        const token = crypto.randomBytes(32).toString('hex');
+
+        const encrypted_card_number = await encryptAES(card_number, token, nonce);
+        const encrypted_expiry_month = await encryptAES(card_expiry_month, token, nonce);
+        const encrypted_expiry_year = await encryptAES(card_expiry_year, token, nonce);
+        const encrypted_cvv = await encryptAES(card_cvv, token, nonce);
+
+        const result = await axios.post('https://developersandbox-api.flutterwave.com/payment-methods',
+            {
+                "type": "card",
+                "card": {
+                    "encrypted_card_number": encrypted_card_number,
+                    "encrypted_expiry_month": encrypted_expiry_month,
+                    "encrypted_expiry_year": encrypted_expiry_year,
+                    "encrypted_cvv": encrypted_cvv,
+                    "nonce": nonce
+                }
+            },
+            {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                    "X-Trace-Id": `${customerResult.traceId}`,
+                    'X-Idempotency-Key': `${customerResult.idempotencyKey}`
+                }
+            }
+        )
+
+        console.log(result)
+
+        await this.paymentModel.findOneAndUpdate(
+            { "flutterwave.traceId": customerResult.traceId },
+            {
+                $set: {
+                    flutterwave: {
+                        card: {
+                            payment_method_id: result.data.id
+                        }
+                    }
+                }
+            }
+        )
+
+        return result.data as ICardObject;
     }
 
     public async flutterWebhook(response: any) {

@@ -59,6 +59,11 @@ export interface IFlutterwaveMetadata {
     meta: object;
 }
 
+export interface ICardID {
+    customer_id: string,
+    payment_method_id: string,
+}
+
 // Recipient interface for transfers
 export interface IRecipient {
     type: string;
@@ -103,6 +108,7 @@ export interface IPayment extends Document {
     flutterwave?: IFlutterwaveMetadata & {
         recipient?: IRecipient;
         type?: TransferType;
+        card?: ICardID;
     };
 
     // Refund fields
@@ -230,6 +236,10 @@ const PaymentSchema = new Schema<IPayment>(
                     account_number: { type: String },
                     code: { type: String }
                 }
+            },
+            card: {
+                customer_id: { type: String },
+                payment_method_id: { type: String }
             },
             meta: {}
         },
