@@ -289,7 +289,7 @@ class PaymentService {
         await this.paymentModel.create(transferData);
         return responseData;
     }
-    async ceateCustomer(userId) {
+    async createCustomer(userId) {
         const accessToken = await this.paymentToken.flutterToken();
         const traceId = crypto.randomUUID();
         const idempotencyKey = crypto.randomUUID();
@@ -298,95 +298,159 @@ class PaymentService {
         }
         const user = await this.isUserExists(userId);
         if (!user) {
-            throw new Error("user not found");
+            throw new Error("customer not found ");
         }
-        const result = await axios_1.default.post('https://developersandbox-api.flutterwave.com/customers', {
-            "address": {
-                "city": user?.address?.city,
-                "country": user?.address?.country,
-                "line1": user?.address?.line1,
-                "line2": user?.address?.line2,
-                "postal_code": user?.address?.postal_code,
-                "state": user?.address?.state
-            },
-            "name": {
-                "first": user.firstName,
-                "middle": user.lastName.slice(0, 1),
-                "last": user.lastName
-            },
-            "phone": {
-                "country_code": user.phone?.country_code,
-                "number": user.phone?.number
-            },
-            "email": user.email
-        }, {
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-                "X-Trace-Id": `${traceId}`,
+        let customerId;
+        let flutterwaveCustomer;
+        try {
+            const searchResponse = await axios_1.default.get(`https://developersandbox-api.flutterwave.com/customers?email=${encodeURIComponent(user.email)}`, {
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`,
+                    "Content-Type": "application/json",
+                }
+            });
+            if (searchResponse.data?.data?.length > 0) {
+                // Customer exists
+                flutterwaveCustomer = searchResponse.data.data[0];
+                customerId = flutterwaveCustomer.id;
+                console.log('Existing customer found:', customerId);
             }
-        });
-        const customer = {
-            userId: userId,
-            flutterwave: {
-                flutterId: result.data.id,
-                traceId: traceId,
-                card: {
-                    customer_id: result.data.id
-                },
-                meta: {
-                    customer: result.data
+            return {
+                traceId,
+                idempotencyKey
+            };
+        }
+        catch (error) {
+            // Customer not found, create new one
+            console.log('Customer not found, creating new...');
+            try {
+                const result = await axios_1.default.post('https://developersandbox-api.flutterwave.com/customers', {
+                    "address": {
+                        "city": user?.address?.city,
+                        "country": user?.address?.country,
+                        "line1": user?.address?.line1,
+                        // "line2": user?.address?.line2,
+                        "postal_code": String(user?.address?.postal_code),
+                        "state": user?.address?.state
+                    },
+                    "name": {
+                        "first": user.firstName,
+                        "middle": user.lastName.slice(0, 2),
+                        "last": user.lastName
+                    },
+                    "phone": {
+                        "country_code": user.phone?.country_code,
+                        "number": String(user.phone?.number)
+                    },
+                    "email": user.email
+                }, {
+                    headers: {
+                        "Authorization": `Bearer ${accessToken}`,
+                        "Content-Type": "application/json",
+                        "X-Trace-Id": `${traceId}`,
+                        'X-Idempotency-Key': `${idempotencyKey}`
+                    }
+                });
+                customerId = result.data.id;
+                const customer = {
+                    userId: userId,
+                    flutterwave: {
+                        flutterId: customerId,
+                        traceId: traceId,
+                        card: {
+                            customer_id: customerId
+                        },
+                        meta: {
+                            customer: result.data
+                        }
+                    }
+                };
+                try {
+                    await this.paymentModel.create(customer);
+                }
+                catch (dbError) {
+                    console.log('Database error:', dbError.message);
+                    console.log('Attempted to insert:', JSON.stringify(customer, null, 2));
+                    throw dbError;
+                }
+                return {
+                    traceId,
+                    idempotencyKey
+                };
+            }
+            catch (error) {
+                const errorData = error.response?.data;
+                console.log('Error Status:', error.response?.status);
+                console.log('Error Message:', errorData?.error?.message);
+                console.log('Validation Errors:', JSON.stringify(errorData?.error?.validation_errors, null, 2));
+                // Loop through validation errors
+                if (errorData?.error?.validation_errors) {
+                    errorData.error.validation_errors.forEach((err, index) => {
+                        console.log(`Validation Error ${index + 1}:`, err);
+                    });
                 }
             }
-        };
-        console.log(result);
-        await this.paymentModel.create(customer);
-        return {
-            traceId,
-            idempotencyKey
-        };
+        }
     }
     async getCardInfo(userData) {
+        console.log("pass 1");
         const accessToken = await this.paymentToken.flutterToken();
+        console.log("pass 2");
         const { userId, card_number, card_expiry_month, card_expiry_year, card_cvv } = userData;
+        console.log("pass 3");
         if (!userId || !card_number || !card_expiry_month || !card_expiry_year || !card_cvv) {
             throw new Error('Missing card information');
         }
-        const customerResult = await this.ceateCustomer(userId);
-        const nonce = this.otpService.NewOtp(12);
-        const token = crypto.randomBytes(32).toString('hex');
+        console.log("pass 4");
+        const customerResult = await this.createCustomer(userId);
+        if (!customerResult) {
+            throw new Error("can not create customer");
+        }
+        console.log("pass 5");
+        const nonce = String(await this.otpService.NewOtp(12));
+        console.log("pass 6");
+        const token = crypto.randomBytes(32).toString('base64');
+        console.log("pass 7");
         const encrypted_card_number = await (0, Encrypt_1.encryptAES)(card_number, token, nonce);
         const encrypted_expiry_month = await (0, Encrypt_1.encryptAES)(card_expiry_month, token, nonce);
         const encrypted_expiry_year = await (0, Encrypt_1.encryptAES)(card_expiry_year, token, nonce);
         const encrypted_cvv = await (0, Encrypt_1.encryptAES)(card_cvv, token, nonce);
-        const result = await axios_1.default.post('https://developersandbox-api.flutterwave.com/payment-methods', {
-            "type": "card",
-            "card": {
-                "encrypted_card_number": encrypted_card_number,
-                "encrypted_expiry_month": encrypted_expiry_month,
-                "encrypted_expiry_year": encrypted_expiry_year,
-                "encrypted_cvv": encrypted_cvv,
-                "nonce": nonce
-            }
-        }, {
-            headers: {
-                "Authorization": `Bearer ${accessToken}`,
-                "Content-Type": "application/json",
-                "X-Trace-Id": `${customerResult.traceId}`,
-                'X-Idempotency-Key': `${customerResult.idempotencyKey}`
-            }
-        });
-        console.log(result);
-        await this.paymentModel.findOneAndUpdate({ "flutterwave.traceId": customerResult.traceId }, {
-            $set: {
-                flutterwave: {
-                    card: {
-                        payment_method_id: result.data.id
-                    }
-                }
-            }
-        });
-        return result.data;
+        console.log("pass 8");
+        // const result = await axios.post('https://developersandbox-api.flutterwave.com/payment-methods',
+        //     {
+        //         "type": "card",
+        //         "card": {
+        //             "encrypted_card_number": encrypted_card_number,
+        //             "encrypted_expiry_month": encrypted_expiry_month,
+        //             "encrypted_expiry_year": encrypted_expiry_year,
+        //             "encrypted_cvv": encrypted_cvv,
+        //             "nonce": nonce
+        //         }
+        //     },
+        //     {
+        //         headers: {
+        //             "Authorization": `Bearer ${accessToken}`,
+        //             "Content-Type": "application/json",
+        //             "X-Trace-Id": `${customerResult.traceId}`,
+        //             'X-Idempotency-Key': `${customerResult.idempotencyKey}`
+        //         }
+        //     }
+        // )
+        // console.log("pass 9")
+        // console.log(result)
+        // await this.paymentModel.findOneAndUpdate(
+        //     { "flutterwave.traceId": customerResult.traceId },
+        //     {
+        //         $set: {
+        //             flutterwave: {
+        //                 card: {
+        //                     payment_method_id: result.data.id
+        //                 }
+        //             }
+        //         }
+        //     }
+        // )
+        // return result.data as ICardObject;
     }
     async flutterWebhook(response) {
         const statusMap = {

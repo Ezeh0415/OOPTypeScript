@@ -125,44 +125,44 @@ const PaymentSchema = new Schema<IPayment>(
         userId: {
             type: Schema.Types.ObjectId,
             ref: "User",
-            required: true
+            // required: true
         },
         amount: {
             type: Schema.Types.Mixed,
-            required: true
+            // required: true
         },
         currency: {
             type: String,
             default: "NGN",
-            required: true
+            // required: true
         },
         status: {
             type: String,
             enum: Object.values(PaymentStatus),
             default: PaymentStatus.PENDING,
-            required: true
+            // required: true
         },
         paymentType: {
             type: String,
             enum: Object.values(PaymentType),
-            required: true
+            // required: true
         },
         provider: {
             type: String,
             enum: Object.values(PaymentProvider),
-            required: true
+            // required: true
         },
 
         // Common fields
         reference: {
             type: String,
-            required: true,
+            // required: true,
             unique: true,
             sparse: true
         },
         customerEmail: {
             type: String,
-            required: true,
+            // required: true,
             lowercase: true,
             trim: true
         },

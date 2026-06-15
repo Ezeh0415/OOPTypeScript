@@ -71,5 +71,6 @@ router.post('/paystack/deposit', Authentication.authenticate.bind(Authentication
 router.post('/deposit/webhook', express_2.default.json(), (req, res) => paymentContr.PaystackWebhhok(req, res));
 router.post('/flutterWave/transfer', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.createTransferRecipient(req, res));
 router.post('/flutterWave/initiateTransfer', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.initiateTransfer(req, res));
+router.post('/card/info', Authentication.authenticate.bind(Authentication), (req, res) => paymentContr.getCardInfo(req, res));
 router.post('/webhook/transfer-callback', (req, res) => paymentContr.flutterWaveWebhook(req, res));
 exports.default = router;

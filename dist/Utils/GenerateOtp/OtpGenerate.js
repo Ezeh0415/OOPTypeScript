@@ -13,7 +13,7 @@ class OtpService {
     async NewOtp(number) {
         const otp = (0, otp_generator_1.generate)(number, {
             digits: true,
-            lowerCaseAlphabets: false,
+            lowerCaseAlphabets: true,
             upperCaseAlphabets: false,
             specialChars: false,
         });

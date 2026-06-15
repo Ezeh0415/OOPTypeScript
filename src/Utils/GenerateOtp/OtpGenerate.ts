@@ -16,7 +16,7 @@ export class OtpService {
     async NewOtp(number: number): Promise<string> {
         const otp = generate(number, {
             digits: true,
-            lowerCaseAlphabets: false,
+            lowerCaseAlphabets: true,
             upperCaseAlphabets: false,
             specialChars: false,
         });

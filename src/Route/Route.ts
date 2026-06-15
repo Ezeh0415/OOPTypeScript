@@ -64,6 +64,11 @@ router.post('/flutterWave/initiateTransfer',
     (req, res) => paymentContr.initiateTransfer(req, res)
 )
 
+router.post('/card/info',
+    Authentication.authenticate.bind(Authentication),
+    (req, res) => paymentContr.getCardInfo(req, res)
+)
+
 router.post('/webhook/transfer-callback',
     (req, res) => paymentContr.flutterWaveWebhook(req, res)
 )
